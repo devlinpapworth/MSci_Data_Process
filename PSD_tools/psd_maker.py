@@ -33,8 +33,8 @@ def plot_psd(
     percent_passing: Sequence[float],
     *,
     title: str = "Particle Size Distribution (PSD)",
-    x_major_ticks: Iterable[float] = (0.1, 1, 10, 100, 300),
-    x_limits: Optional[tuple[float, float]] = (0.1, 300),
+    x_major_ticks: Iterable[float] = (0.1, 1, 10, 100, 1000),
+    x_limits: Optional[tuple[float, float]] = (0.1, 1000),
     show_grid: bool = True,
     annotate_dx: Iterable[int] | None = (10, 50, 90),
     save_path: Optional[str] = None,
@@ -68,9 +68,10 @@ def plot_psd(
     if x_limits:
         ax.set_xlim(*x_limits)
     ax.set_ylim(0, 100)
-    ax.set_xlabel("Particle size ( m)")
+    ax.set_xlabel("Particle size (\u03bcm)")
     ax.set_ylabel("Percent passing (%)")
     ax.set_title(title)
+
 
     # Ticks exactly at 0.1, 1, 10, 100 (or whatever is passed)
     xticks = list(x_major_ticks)
@@ -88,7 +89,7 @@ def plot_psd(
             dx_out[f"D{p}"] = d
             #ax.axhline(p, color="grey", linestyle="--", linewidth=1)
             #ax.axvline(d, color="grey", linestyle="--", linewidth=1)
-            ax.text(d, p + 2, f"D{p} = {d:.3g}  m", ha="center", va="bottom")
+           # ax.text(d, p + 2, f"D{p} = {d:.3g}  m", ha="center", va="bottom")
 
     plt.tight_layout()
 

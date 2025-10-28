@@ -1,2 +1,1 @@
-
-from .psd_maker import plot_psd, d_at_percent
+from PSD_tools.psd_maker import plot_psd, d_at_percent

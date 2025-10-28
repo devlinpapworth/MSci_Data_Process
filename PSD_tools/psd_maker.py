@@ -1,10 +1,11 @@
-
+# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from typing import Iterable, Sequence, Optional
+
 
 def d_at_percent(
     sizes_um: Sequence[float],
@@ -32,8 +33,8 @@ def plot_psd(
     percent_passing: Sequence[float],
     *,
     title: str = "Particle Size Distribution (PSD)",
-    x_major_ticks: Iterable[float] = (0.1, 1, 10, 100),
-    x_limits: Optional[tuple[float, float]] = (0.1, 100),
+    x_major_ticks: Iterable[float] = (0.1, 1, 10, 100, 300),
+    x_limits: Optional[tuple[float, float]] = (0.1, 300),
     show_grid: bool = True,
     annotate_dx: Iterable[int] | None = (10, 50, 90),
     save_path: Optional[str] = None,
@@ -45,7 +46,7 @@ def plot_psd(
 
     Parameters
     ----------
-    sizes_um : ascending particle sizes (µm)
+    sizes_um : ascending particle sizes ( m)
     percent_passing : cumulative % passing, non-decreasing
     x_major_ticks : where to place the log ticks (default: 0.1, 1, 10, 100)
     x_limits : x-axis limits (log scale)
@@ -67,7 +68,7 @@ def plot_psd(
     if x_limits:
         ax.set_xlim(*x_limits)
     ax.set_ylim(0, 100)
-    ax.set_xlabel("Particle size (µm)")
+    ax.set_xlabel("Particle size ( m)")
     ax.set_ylabel("Percent passing (%)")
     ax.set_title(title)
 
@@ -85,9 +86,9 @@ def plot_psd(
         for p in annotate_dx:
             d = d_at_percent(x, y, p)
             dx_out[f"D{p}"] = d
-            ax.axhline(p, color="grey", linestyle="--", linewidth=1)
-            ax.axvline(d, color="grey", linestyle="--", linewidth=1)
-            ax.text(d, p + 2, f"D{p} = {d:.3g} µm", ha="center", va="bottom")
+            #ax.axhline(p, color="grey", linestyle="--", linewidth=1)
+            #ax.axvline(d, color="grey", linestyle="--", linewidth=1)
+            ax.text(d, p + 2, f"D{p} = {d:.3g}  m", ha="center", va="bottom")
 
     plt.tight_layout()
 

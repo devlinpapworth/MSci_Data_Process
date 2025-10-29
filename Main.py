@@ -1,13 +1,18 @@
 from PSD_tools import plot_psd
-#from Data_Process import 
+from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
+
+
 def main():
-    # Example data – replace with yours
+    # === Example: single PSD curve plotting ===
     sizes_um = [0.5, 0.7, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26, 38, 53, 75, 106, 150, 212, 300, 425, 600, 1000]
-    percent_passing = [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615, 55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703, 94.637, 97.28, 99.165, 99.914, 100]
+    percent_passing = [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
+                       55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,
+                       94.637, 97.28, 99.165, 99.914, 100]
 
-    psd = 1   # flag to toggle plotting on/off
+    psd_flag = 0         # set to 0 to skip individual PSD curve plotting
+    moisture_flag = 1    # set to 0 to skip EFI/FSI–moisture analysis
 
-    if psd == 1:
+    if psd_flag:
         dx = plot_psd(
             sizes_um,
             percent_passing,
@@ -18,6 +23,14 @@ def main():
             show=True,
         )
         print("Computed D-values:", dx)
+
+    # === Example: run EFI / FSI analysis ===
+    if moisture_flag:
+        # path to your Excel file with 'DB' and 'PSD' sheets
+        data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
+        df_results = plot_moisture_vs_psd_indices(data_path)
+        print("\nMerged DataFrame with PSD indices and Mc%:")
+        print(df_results.head())
 
 
 if __name__ == "__main__":

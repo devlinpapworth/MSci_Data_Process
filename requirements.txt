@@ -1,4 +1,5 @@
+pandas
 matplotlib
 numpy
-pandas
 openpyxl
+watchdog

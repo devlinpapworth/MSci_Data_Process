@@ -15,7 +15,6 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     df_psd = pd.read_excel(xlsx_path, sheet_name=sheet_psd, engine="openpyxl")
 
     # === Clean moisture ===
-    # coerce 'Mc_%' to numeric; strings like '>25%' become NaN and are dropped
     df_db["Mc_%"] = pd.to_numeric(df_db.get("Mc_%"), errors="coerce")
 
     # === Drop failed/anom rows if 'Coments' exists ===
@@ -39,8 +38,8 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
 
     # === Compute indices per-row ===
     df["EFI"] = df["D50"] / df["D10"]
-    df["RS"]  = (df["D90"] - df["D10"]) / df["D50"]   # relative span
-    df["FSI"] = df["D10"] * df["RS"]
+    df["FSI"] = (df["D90"] - df["D10"]) / df["D50"]   # <- dimensionless span as requested
+    df["RS"]  = df["FSI"]  # optional: keep alias if other code expects RS
 
     # === Color by exact Sample Code ===
     df["Sample Label"] = df["Sample Code"].astype(str)
@@ -51,35 +50,28 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
         plt.figure(figsize=(8.0, 5.8))
 
         uniq = sorted(groups.unique())
-        cmap = plt.cm.get_cmap("tab20", len(uniq))  # more colors if many samples
+        cmap = plt.cm.get_cmap("tab20", len(uniq))
         color_map = {g: cmap(i) for i, g in enumerate(uniq)}
 
-        # plot each sample code as a separate color group
         for g in uniq:
             m = groups == g
             plt.scatter(x[m], y[m], s=65, alpha=0.9, edgecolor="black",
                         linewidths=0.4, color=color_map[g], label=g)
 
-        # overall trendline across all points
         try:
             z = np.polyfit(x, y, 1)
             p = np.poly1d(z)
             xs = np.linspace(np.nanmin(x), np.nanmax(x), 200)
             plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
         except Exception:
-            pass  # if not enough points for a fit
-
-        # (Optional) annotate points — comment out if too busy
-        # for xi, yi, sc in zip(x, y, all_labels):
-        #     plt.annotate(str(sc), (xi, yi), textcoords="offset points",
-        #                  xytext=(4, 4), fontsize=7)
+            pass
 
         plt.title(title)
         plt.xlabel(xlab)
         plt.ylabel(ylab)
         plt.grid(True, linestyle="--", alpha=0.5)
-        # put legend outside if many groups
-        plt.legend(title="Sample Code", fontsize=8, bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0.)
+        plt.legend(title="Sample Code", fontsize=8, bbox_to_anchor=(1.02, 1),
+                   loc="upper left", borderaxespad=0.)
         plt.tight_layout()
         plt.show()
 
@@ -94,7 +86,7 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     # === Plot 2: FSI vs Mc_% (all rows) ===
     scatter_grouped(
         df["FSI"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="PSD Span = D10 * (D90 - D10) / D50 (\u03bcm)",
+        labels_series.values, xlab="PSD Span = (D90 - D10) / D50 (-)",
         ylab="Final Moisture (Mc %)",
         title="Final Moisture vs Span"
     )

@@ -7,7 +7,10 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     """
     Plot every valid row from DB (no aggregation) merged with PSD.
     Excludes rows where 'Coments' contains 'fail' or 'anom' (case-insensitive).
-    Color-code points by Sample Code. Shows two plots: Mc% vs EFI and Mc% vs FSI.
+    Color-code points by Sample Code. Shows three plots:
+      - Mc% vs EFI
+      - Mc% vs FSI (span)
+      - Mc% vs D10
     """
 
     # === Load data ===
@@ -38,8 +41,8 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
 
     # === Compute indices per-row ===
     df["EFI"] = df["D50"] / df["D10"]
-    df["FSI"] = (df["D90"] - df["D10"]) / df["D50"]   # <- dimensionless span as requested
-    df["RS"]  = df["FSI"]  # optional: keep alias if other code expects RS
+    df["FSI"] = (df["D90"] - df["D10"]) / df["D50"]   # dimensionless span
+    df["RS"]  = df["FSI"]
 
     # === Color by exact Sample Code ===
     df["Sample Label"] = df["Sample Code"].astype(str)
@@ -89,6 +92,14 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
         labels_series.values, xlab="PSD Span = (D90 - D10) / D50 (-)",
         ylab="Final Moisture (Mc %)",
         title="Final Moisture vs Span"
+    )
+
+    # === Plot 3: D10 vs Mc_% (all rows) ===
+    scatter_grouped(
+        df["D10"].values, df["Mc_%"].values, df["Sample Label"],
+        labels_series.values, xlab="D10 (um)",
+        ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D10"
     )
 
     return df

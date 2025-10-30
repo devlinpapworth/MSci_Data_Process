@@ -2,7 +2,7 @@ from PSD_tools import plot_psd, d_at_percent, plot_all_psd
 from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 
 def main():
-    # ---- single PSD curve (your existing block) ----
+    # ---- single PSD curve (as received PSD) ----
     sizes_um = [0.5, 0.7, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26, 38, 53, 75, 106, 150, 212, 300, 425, 600, 1000]
     percent_passing = [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
                        55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,

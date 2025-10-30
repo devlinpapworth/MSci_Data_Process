@@ -97,7 +97,7 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     # === Plot 3: D10 vs Mc_% (all rows) ===
     scatter_grouped(
         df["D10"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="D10 (um)",
+        labels_series.values, xlab="D10 (\u03bcm)",
         ylab="Final Moisture (Mc %)",
         title="Final Moisture vs D10"
     )

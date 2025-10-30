@@ -88,15 +88,15 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
         df["EFI"].values, df["Mc_%"].values, df["Sample Label"],
         labels_series.values, xlab="EFI = D50 / D10 (-)",
         ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs EFI (all valid tests)"
+        title="Final Moisture vs EFI"
     )
 
     # === Plot 2: FSI vs Mc_% (all rows) ===
     scatter_grouped(
         df["FSI"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="FSI = D10 * (D90 - D10) / D50 (um)",
+        labels_series.values, xlab="PSD Span = D10 * (D90 - D10) / D50 (\u03bcm)",
         ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs FSI (all valid tests)"
+        title="Final Moisture vs Span"
     )
 
     return df

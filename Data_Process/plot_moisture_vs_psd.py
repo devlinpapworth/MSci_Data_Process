@@ -7,10 +7,11 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     """
     Plot every valid row from DB (no aggregation) merged with PSD.
     Excludes rows where 'Coments' contains 'fail' or 'anom' (case-insensitive).
-    Color-code points by Sample Code. Shows three plots:
-      - Mc% vs EFI
-      - Mc% vs FSI (span)
-      - Mc% vs D10
+    Color-code points by Sample Code. Shows four plots:
+      1) Mc% vs D90/D50
+      2) Mc% vs FSI = (D90 - D10) / D50
+      3) Mc% vs D10
+      4) Mc% vs D50
     """
 
     # === Load data ===
@@ -20,10 +21,11 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     # === Clean moisture ===
     df_db["Mc_%"] = pd.to_numeric(df_db.get("Mc_%"), errors="coerce")
 
-    # === Drop failed/anom rows if 'Coments' exists ===
-    if "Coments" in df_db.columns:
-        bad = df_db["Coments"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
-        df_db = df_db[~bad]
+   # === Keep only rows explicitly marked 'include' under the 'flag' column ===
+    if "flag" in df_db.columns:
+        keep = df_db["flag"].astype(str).str.lower().str.contains(r"\binclude\b", na=False)
+        df_db = df_db[keep]
+
 
     # keep only rows with a sample code and valid moisture
     df_db = df_db.dropna(subset=["Sample Code", "Mc_%"])
@@ -40,9 +42,8 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     df = df[(df["D10"] > 0) & (df["D50"] > 0)]
 
     # === Compute indices per-row ===
-    df["EFI"] = df["D50"] / df["D10"]
-    df["FSI"] = (df["D90"] - df["D10"]) / df["D50"]   # dimensionless span
-    df["RS"]  = df["FSI"]
+    df["D90_over_D50"] = df["D90"] / df["D50"]                        # your Plot 1 x-axis
+    df["FSI"]          = (df["D90"] - df["D10"]) / df["D50"]          # dimensionless span
 
     # === Color by exact Sample Code ===
     df["Sample Label"] = df["Sample Code"].astype(str)
@@ -78,20 +79,20 @@ def plot_moisture_vs_psd_indices(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
         plt.tight_layout()
         plt.show()
 
-    # === Plot 1: EFI vs Mc_% (all rows) ===
+    # === Plot 1: D90/D50 vs Mc_% (all rows) ===
     scatter_grouped(
-        df["EFI"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="EFI = D50 / D10 (-)",
+        df["D90_over_D50"].values, df["Mc_%"].values, df["Sample Label"],
+        labels_series.values, xlab="D90 / D50 (-)",
         ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs EFI"
+        title="Final Moisture vs D90/D50"
     )
 
     # === Plot 2: FSI vs Mc_% (all rows) ===
     scatter_grouped(
         df["FSI"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="PSD Span = (D90 - D10) / D50 (-)",
+        labels_series.values, xlab="FSI = (D90 - D10) / D50 (-)",
         ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs Span"
+        title="Final Moisture vs FSI"
     )
 
     # === Plot 3: D10 vs Mc_% (all rows) ===

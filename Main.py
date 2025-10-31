@@ -2,6 +2,7 @@ from PSD_tools import plot_psd, d_at_percent, plot_all_psd
 from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 from Data_Process.T_vs_Ml import plot_T_vs_Ml   # <--- new import
 from Data_Process.T_vs_Ml import plot_TvsPSD
+from Data_Process.Pumping_curve import plot_pumping_curve
 
 
 def main():
@@ -16,9 +17,12 @@ def main():
 
     psd_flag = 0          # single PSD example
     multi_flag = 0        # all PSDs from "PSD_Full"
-    moisture_flag = 1     # Mc% vs EFI/FSI
+    moisture_flag = 0     # Mc% vs EFI/FSI
     tvml_flag = 0         # NEW: F_T vs F_V/F_T plot
     tvspsd_flag = 0
+    pump_flag = 1
+
+
     # ---- single PSD curve ----
     if psd_flag:
         dx = plot_psd(
@@ -60,6 +64,10 @@ def main():
     if tvspsd_flag:
         df_tvspsd = plot_TvsPSD(data_path)
         print(df_tvspsd[["Sample Code", "EFI", "FT_over_FV"]].head())
+
+
+    if pump_flag:
+        plot_pumping_curve()
 
 if __name__ == "__main__":
     main()

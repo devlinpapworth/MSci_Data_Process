@@ -9,7 +9,7 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
     """
     x = F_T
     y = F_T / F_V
-    Filters out rows where 'Coments' contains 'fail' or 'anom'.
+    Filters out rows where 'flag' contains 'fail' or 'anom'.
     Colors by Sample Code. Returns filtered DataFrame with 'FT_over_FV'.
     """
     # === Load ===
@@ -30,7 +30,7 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
 
     # === Filter 'fail'/'anom' ===
     if "flag" in df.columns:
-        mask_bad = df["Coments"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
+        mask_bad = df["flag"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
         df = df[~mask_bad]
 
     # === Valid rows ===
@@ -108,7 +108,7 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
 
     # === Filter 'fail'/'anom' ===
     if "flag" in df_db.columns:
-        mask_bad = df_db["Coments"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
+        mask_bad = df_db["flag"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
         df_db = df_db[~mask_bad]
 
     # === Merge ===
@@ -151,7 +151,7 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
         pass
 
     plt.title("Time / Volume Filtrate vs (D90 / D50)")
-    plt.xlabel("D90 / D10")
+    plt.xlabel("D90 / D50")
     plt.ylabel("Time / Volume Filtrate")
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.legend(title="Sample Code", fontsize=8, bbox_to_anchor=(1.02, 1),

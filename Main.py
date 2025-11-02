@@ -21,7 +21,7 @@ def main():
     multi_flag = 0        # all PSDs from "PSD_Full"
     moisture_flag = 0     # Mc% vs EFI/FSI
     tvml_flag = 0        # NEW: F_T vs F_V/F_T plot
-    tvspsd_flag = 1
+    tvspsd_flag = 0
     pump_flag = 0
     cake_pore_flag = 1
 

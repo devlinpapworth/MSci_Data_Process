@@ -18,7 +18,7 @@ def plot_PSD_vs_CakePore(xlsx_path, sheet_db="DB", sheet_psd="PSD", d50_col="D50
     # === Clean + filter ===
     # Optional: drop failed/anom from DB
     if "flag" in df_db.columns:
-        bad = df_db["Coments"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
+        bad = df_db["flag"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
         df_db = df_db[~bad]
 
     # Coerce numerics

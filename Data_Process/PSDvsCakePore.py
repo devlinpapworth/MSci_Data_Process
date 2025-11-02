@@ -17,7 +17,7 @@ def plot_PSD_vs_CakePore(xlsx_path, sheet_db="DB", sheet_psd="PSD", d50_col="D50
 
     # === Clean + filter ===
     # Optional: drop failed/anom from DB
-    if "Coments" in df_db.columns:
+    if "flag" in df_db.columns:
         bad = df_db["Coments"].astype(str).str.lower().str.contains(r"\bfail\b|\banom\b", na=False)
         df_db = df_db[~bad]
 
@@ -80,7 +80,7 @@ def plot_PSD_vs_CakePore(xlsx_path, sheet_db="DB", sheet_psd="PSD", d50_col="D50
         df["Cake_por"].values,
         df["Sample Label"],
         xlab=f"{d50_col} (\u03bcm)",
-        ylab="Cake Porosity (-)",
+        ylab="Cake Porosity",
         title=f"Cake Porosity vs {d50_col}"
     )
 

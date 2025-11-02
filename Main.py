@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from PSD_tools import plot_psd, d_at_percent, plot_all_psd
 from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 from Data_Process.T_vs_Ml import plot_T_vs_Ml   # <--- new import
@@ -16,12 +18,12 @@ def main():
                        94.637, 97.28, 99.165, 99.914, 100]
      
     psd_flag = 0          # single PSD example
-    multi_flag = 1        # all PSDs from "PSD_Full"
+    multi_flag = 0        # all PSDs from "PSD_Full"
     moisture_flag = 0     # Mc% vs EFI/FSI
     tvml_flag = 0        # NEW: F_T vs F_V/F_T plot
-    tvspsd_flag = 0
+    tvspsd_flag = 1
     pump_flag = 0
-    cake_pore_flag = 0
+    cake_pore_flag = 1
 
     # # ---- single PSD curve ----
     if psd_flag:
@@ -59,7 +61,7 @@ def main():
     if tvml_flag:
         df_tvml = plot_T_vs_Ml(data_path)
         print("\nFiltered DataFrame for F_T vs F_V/F_T:")
-        print(df_tvml[["Sample Code", "F_T", "F_V", "FV_over_FT"]].head())
+        print(df_tvml[["Sample Code", "F_T", "F_V", "FT_over_FV"]].head())
 
     
     if tvspsd_flag:

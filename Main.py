@@ -3,7 +3,7 @@ from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 from Data_Process.T_vs_Ml import plot_T_vs_Ml   # <--- new import
 from Data_Process.T_vs_Ml import plot_TvsPSD
 from Data_Process.Pumping_curve import plot_pumping_curve
-
+from Data_Process.PSDvsCakePore import plot_PSD_vs_CakePore
 
 def main():
     # Path to your live Excel file
@@ -14,21 +14,21 @@ def main():
     percent_passing = [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
                        55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,
                        94.637, 97.28, 99.165, 99.914, 100]
-
+     
     psd_flag = 0          # single PSD example
-    multi_flag = 0        # all PSDs from "PSD_Full"
-    moisture_flag = 1     # Mc% vs EFI/FSI
-    tvml_flag = 0         # NEW: F_T vs F_V/F_T plot
+    multi_flag = 1        # all PSDs from "PSD_Full"
+    moisture_flag = 0     # Mc% vs EFI/FSI
+    tvml_flag = 0        # NEW: F_T vs F_V/F_T plot
     tvspsd_flag = 0
     pump_flag = 0
+    cake_pore_flag = 0
 
-
-    # ---- single PSD curve ----
+    # # ---- single PSD curve ----
     if psd_flag:
         dx = plot_psd(
             sizes_um,
             percent_passing,
-            title="As Received PSD",
+            title="as received psd",
             x_major_ticks=(0.1, 1, 10, 100, 1000),
             x_limits=(0.1, 1000),
             annotate_dx=None,
@@ -44,9 +44,10 @@ def main():
             title="All PSD Curves (\u03bcm)",
             x_limits=(0.1, 1000),
             x_major_ticks=(0.1, 1, 10, 100, 1000),
-            save_path="all_psd_curves.png",
+            #save_path="all_psd_curves.png",
             show=True,
-        )
+    )
+
 
     # ---- Mc% vs EFI / FSI ----
     if moisture_flag:
@@ -68,6 +69,17 @@ def main():
 
     if pump_flag:
         plot_pumping_curve()
+
+    if cake_pore_flag:
+        try:
+            plot_PSD_vs_CakePore(
+                data_path,          # <— use the real path
+                sheet_db="DB",
+                sheet_psd="PSD",
+                d50_col="D50"
+         )
+        except Exception as e:
+            print("CakePore plot failed:", e)
 
 if __name__ == "__main__":
     main()

@@ -8,17 +8,17 @@ def plot_moisture_vs_psd_indices(
     sheet_db="DB",
     sheet_psd="PSD",
     include_samples=None,
-    color_map=None,   # <-- NEW: pass dict of sample->color
+    color_map=None,   # pass dict of sample->color
 ):
     """
     Plot every valid row from DB (no aggregation) merged with PSD.
     Keeps only rows where 'flag' contains 'include' (case-insensitive).
     Optional manual filter via include_samples (iterable of codes).
-    Color-code points by Sample Code. Shows four plots:
-      1) Mc% vs D90/D50
-      2) Mc% vs FSI = (D90 - D10) / D50
-      3) Mc% vs D10
-      4) Mc% vs D50
+    Color-code points by Sample Code. Shows four plots with FIXED AXES:
+      1) Mc% vs D90/D50   (x: 1–10,   y: 0–30)
+      2) Mc% vs FSI       (x: 0–5*,   y: 0–30)
+      3) Mc% vs D10       (x: 0–100,  y: 0–30)
+      4) Mc% vs D50       (x: 0–130,  y: 0–30)
     """
 
     # === Load data ===
@@ -27,6 +27,10 @@ def plot_moisture_vs_psd_indices(
 
     # === Clean moisture ===
     df_db["Mc_%"] = pd.to_numeric(df_db.get("Mc_%"), errors="coerce")
+
+    # === Convert decimals to percentage if needed ===
+    if df_db["Mc_%"].mean(skipna=True) < 1:  # detects if values like 0.15 should be 15%
+        df_db["Mc_%"] *= 100
 
     # === Keep only rows explicitly marked 'include' under the 'flag' column ===
     if "flag" in df_db.columns:
@@ -60,8 +64,8 @@ def plot_moisture_vs_psd_indices(
     df["Sample Label"] = df["Sample Code"].astype(str)
     labels_series = df["Sample Label"]
 
-    # === Generic scatter helper with color groups ===
-    def scatter_grouped(x, y, groups, all_labels, xlab, ylab, title):
+    # === Generic scatter helper with color groups + FIXED AXES ===
+    def scatter_grouped(x, y, groups, all_labels, xlab, ylab, title, xlim=None, ylim=None):
         plt.figure(figsize=(8.0, 5.8))
 
         uniq = sorted(groups.unique())
@@ -78,7 +82,7 @@ def plot_moisture_vs_psd_indices(
             plt.scatter(x[m], y[m], s=65, alpha=0.9, edgecolor="black",
                         linewidths=0.4, color=lookup[g], label=g)
 
-        # Trendline with finite-mask safety
+        # Trendline
         try:
             x_arr = np.asarray(x, dtype=float)
             y_arr = np.asarray(y, dtype=float)
@@ -91,6 +95,12 @@ def plot_moisture_vs_psd_indices(
         except Exception:
             pass
 
+        # >>> FIXED AXES <<<
+        if xlim is not None:
+            plt.xlim(*xlim)
+        if ylim is not None:
+            plt.ylim(*ylim)
+
         plt.title(title)
         plt.xlabel(xlab)
         plt.ylabel(ylab)
@@ -100,36 +110,40 @@ def plot_moisture_vs_psd_indices(
         plt.tight_layout()
         plt.show()
 
-    # === Plot 1: D90/D50 vs Mc_% (all rows) ===
+    # === Plot 1: D90/D50 vs Mc_% ===
     scatter_grouped(
         df["D90_over_D50"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="D90 / D50",
-        ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs D90/D50"
+        labels_series.values,
+        xlab="D90 / D50", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D90/D50",
+        xlim=(1, 10), ylim=(0, 30)
     )
 
-    # === Plot 2: FSI vs Mc_% (all rows) ===
+    # === Plot 2: FSI vs Mc_% ===
     scatter_grouped(
         df["FSI"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="(D90 - D10) / D50",
-        ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs (D90 - D10) / D50"
+        labels_series.values,
+        xlab="(D90 - D10) / D50", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs (D90 - D10) / D50",
+        xlim=(0, 5), ylim=(0, 30)
     )
 
-    # === Plot 3: D10 vs Mc_% (all rows) ===
+    # === Plot 3: D10 vs Mc_% ===
     scatter_grouped(
         df["D10"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="D10 (\u03bcm)",
-        ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs D10"
+        labels_series.values,
+        xlab="D10 (\u03bcm)", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D10",
+        xlim=(0, 100), ylim=(0, 30)
     )
 
-    # === Plot 4: D50 vs Mc_% (all rows) ===
+    # === Plot 4: D50 vs Mc_% ===
     scatter_grouped(
         df["D50"].values, df["Mc_%"].values, df["Sample Label"],
-        labels_series.values, xlab="D50 (\u03bcm)",
-        ylab="Final Moisture (Mc %)",
-        title="Final Moisture vs D50"
+        labels_series.values,
+        xlab="D50 (\u03bcm)", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D50",
+        xlim=(0, 130), ylim=(0, 30)
     )
 
     return df

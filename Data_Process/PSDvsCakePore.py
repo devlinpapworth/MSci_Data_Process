@@ -8,8 +8,13 @@ def plot_PSD_vs_CakePore(
     sheet_psd="PSD",
     d50_col="D50",
     include_samples=None,
-    color_map=None,                # <-- NEW: pass a dict like {"Si_F":"#1f77b4", ...}
+    color_map=None,  # pass a dict like {"Si_F":"#1f77b4", ...}
 ):
+    """
+    Plots Cake Porosity vs D50 with fixed axes:
+      x-axis (D50): 0 - 130 um
+      y-axis (Cake Porosity): 0.3 - 0.5
+    """
     # === Load sheets ===
     df_db  = pd.read_excel(xlsx_path, sheet_name=sheet_db,  engine="openpyxl")
     df_psd = pd.read_excel(xlsx_path, sheet_name=sheet_psd, engine="openpyxl")
@@ -45,14 +50,13 @@ def plot_PSD_vs_CakePore(
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Cake_por", d50_col])
     df["Sample Label"] = df["Sample Code"].astype(str)
 
-    # === Plot helper ===
+    # === Plot helper with FIXED AXES ===
     def scatter_grouped(x, y, groups, xlab, ylab, title, legend_title="Sample Code"):
         plt.figure(figsize=(8.0, 5.8))
         uniq = sorted(pd.Series(groups).unique())
 
         # Build a color lookup: use provided map if given, else tab20
         if color_map is not None:
-            # default to grey when a label not present in color_map
             lookup = {g: color_map.get(g, "#808080") for g in uniq}
         else:
             cmap = plt.cm.get_cmap("tab20", len(uniq))
@@ -66,7 +70,7 @@ def plot_PSD_vs_CakePore(
                 color=lookup[g], label=g
             )
 
-        # Optional overall trendline
+        # Trendline (spanning fixed x-range)
         try:
             x_arr = np.asarray(x, dtype=float)
             y_arr = np.asarray(y, dtype=float)
@@ -74,10 +78,14 @@ def plot_PSD_vs_CakePore(
             if mask.sum() >= 2:
                 z = np.polyfit(x_arr[mask], y_arr[mask], 1)
                 p = np.poly1d(z)
-                xs = np.linspace(np.nanmin(x_arr[mask]), np.nanmax(x_arr[mask]), 200)
+                xs = np.linspace(0, 130, 200)  # match fixed x-axis
                 plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
         except Exception:
             pass
+
+        # >>> FIXED AXES <<<
+        plt.xlim(0, 130)
+        plt.ylim(0.3, 0.5)
 
         plt.title(title)
         plt.xlabel(xlab)

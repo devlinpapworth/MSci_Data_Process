@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 def plot_T_vs_Ml(xlsx_path, sheet_db="DB", include_samples=None, color_map=None):
     """
-    x = F_T
-    y = F_T / F_V
+    x = F_T (time)            -> fixed x-axis:   0 .. 200
+    y = F_T / F_V (time/vol)  -> fixed y-axis:   0 .. 0.45
     Filters out rows where 'flag' contains 'fail' or 'anom'.
     Colors by Sample Code. Returns filtered DataFrame with 'FT_over_FV'.
     """
@@ -62,7 +62,11 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB", include_samples=None, color_map=None)
             color=lookup[g], label=g
         )
 
-    # Trendline (overall)
+    # >>> FIXED AXES <<<
+    plt.xlim(0, 200)     # time axis
+    plt.ylim(0, 0.45)    # time/volume axis
+
+    # Trendline across full fixed x-range
     try:
         x = df["F_T"].astype(float).values
         y = df["FT_over_FV"].astype(float).values
@@ -70,7 +74,7 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB", include_samples=None, color_map=None)
         if mask.sum() >= 2:
             z = np.polyfit(x[mask], y[mask], 1)
             p = np.poly1d(z)
-            xs = np.linspace(np.nanmin(x[mask]), np.nanmax(x[mask]), 200)
+            xs = np.linspace(0, 200, 200)  # match fixed x-limits
             plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
     except Exception:
         pass
@@ -89,8 +93,8 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB", include_samples=None, color_map=None)
 
 def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD", include_samples=None, color_map=None):
     """
-    x = D90 / D50 
-    y = F_T / F_V
+    x = D90 / D50             -> fixed x-axis:   1 .. 10
+    y = F_T / F_V (time/vol)  -> fixed y-axis:   0 .. 0.45
     Filters 'fail'/'anom'. Colors by Sample Code.
     Returns merged DataFrame with 'FT_over_FV' and 'EFI'.
     """
@@ -156,7 +160,11 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD", include_samples=None,
             color=lookup[g], label=g
         )
 
-    # Trendline (overall)
+    # >>> FIXED AXES <<<
+    plt.xlim(1, 10)      # D90/D50
+    plt.ylim(0, 0.45)    # time/volume
+
+    # Trendline across full fixed x-range
     try:
         x = df["EFI"].astype(float).values
         y = df["FT_over_FV"].astype(float).values
@@ -164,7 +172,7 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD", include_samples=None,
         if mask.sum() >= 2:
             z = np.polyfit(x[mask], y[mask], 1)
             p = np.poly1d(z)
-            xs = np.linspace(np.nanmin(x[mask]), np.nanmax(x[mask]), 200)
+            xs = np.linspace(1, 10, 200)  # match fixed x-limits
             plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
     except Exception:
         pass

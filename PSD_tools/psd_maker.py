@@ -127,45 +127,40 @@ def plot_all_psd(
     excel_path: str,
     sheet_name: str = "PSD_Full",
     *,
-    title: str = "Particle Size Distribution (All Samples)",
+    title: str = "Particle Size Distribution",
     x_limits: Tuple[float, float] = (0.1, 1000),
     x_major_ticks: Iterable[float] = (0.1, 1, 10, 100, 1000),
     show_grid: bool = True,
     save_path: Optional[str] = None,
     show: bool = True,
     legend: bool = True,
-    include_samples: Optional[Iterable[Any]] = None,     # filter which rows to draw
-    color_map: Optional[Dict[str, str]] = None           # consistent per-sample colors
+    include_samples: Optional[Iterable[Any]] = None,   # filter which rows to draw
+    color_map: Optional[Dict[str, str]] = None,        # consistent per-sample colors
+    id_col_override: Optional[str] = None              # force ID column if needed
 ) -> None:
-    """
-    Plot all PSD curves from an Excel sheet (e.g. 'PSD_Full').
-    - include_samples: iterable of sample codes/names to include
-    - color_map: dict of {sample_code: hex_color} for consistent coloring
-    Chooses ID column: 'Sample Code' preferred, else 'Sample Name'.
-    Adds a manual overlay curve 'RT_As Received' that also respects color_map.
-    """
-
     def to_cumulative(y_raw: np.ndarray) -> np.ndarray:
         y = np.nan_to_num(y_raw.astype(float), nan=0.0)
-        # If already cumulative (non-decreasing, <=100), return clipped.
         if np.all(np.diff(y) >= -1e-6) and np.nanmax(y) <= 100 + 1e-6:
             return np.clip(y, 0, 100)
-        # Otherwise convert to cumulative undersize (normalize to 100).
         tot = y.sum()
         return np.cumsum(y * (100.0 / tot)) if tot > 0 else y
 
     df = pd.read_excel(excel_path, sheet_name=sheet_name, engine="openpyxl")
 
-    # Determine ID column
-    id_col = None
-    for candidate in ["Sample Code", "Sample Name"]:
-        if candidate in df.columns:
-            id_col = candidate
-            break
+    # --- Decide which ID column to use ---
+    if id_col_override and id_col_override in df.columns:
+        id_col = id_col_override
+    else:
+        id_col = "Sample Code" if "Sample Code" in df.columns else (
+            "Sample Name" if "Sample Name" in df.columns else None
+        )
     if id_col is None:
         raise ValueError("Neither 'Sample Code' nor 'Sample Name' found in the sheet.")
 
-    # Extract PSD size columns
+    # Normalize the ID column for robust matching
+    df[id_col] = df[id_col].astype(str).str.strip()
+
+    # --- Extract PSD size columns ---
     psd_cols: List[str] = []
     sizes_um: List[float] = []
     for c in df.columns:
@@ -176,15 +171,16 @@ def plot_all_psd(
     if not psd_cols:
         raise ValueError("No numeric PSD size columns found in the sheet.")
 
-    # ascending order
     order = np.argsort(sizes_um)
     sizes_um = np.asarray(sizes_um, dtype=float)[order]
     psd_cols = [psd_cols[i] for i in order]
 
-    # optional filter by include_samples
+    # --- Build normalized include set and filter rows ---
+    allow_set = None
     if include_samples is not None:
-        allow = set(str(s) for s in include_samples)
-        df = df[df[id_col].astype(str).isin(allow)]
+        allow_set = {str(s).strip().casefold() for s in include_samples}
+        mask = df[id_col].str.strip().str.casefold().isin(allow_set)
+        df = df[mask]
 
     # setup figure
     fig, ax = plt.subplots(figsize=(9, 5.5))
@@ -194,53 +190,48 @@ def plot_all_psd(
     def resolve_color(label: str) -> Any:
         nonlocal cidx
         if color_map is not None:
-            return color_map.get(label, "#808080")  # default grey if not mapped
+            return color_map.get(label, "#808080")
         color = cmap(cidx % 20)
         cidx += 1
         return color
 
     # plot each PSD curve
     for _, row in df.iterrows():
-        label = row.get(id_col)
-        if pd.isna(label):
-            continue
+        label = str(row[id_col]).strip()
         y_vals = row[psd_cols].to_numpy(dtype=float)
         if np.isnan(y_vals).all():
             continue
-
         y_cum = to_cumulative(y_vals)
-        ax.semilogx(
-            sizes_um,
-            y_cum,
-            linewidth=2,
-            label=str(label),
-            color=resolve_color(str(label)),
-        )
+        ax.semilogx(sizes_um, y_cum, linewidth=2, label=label, color=resolve_color(label))
 
-    # manual overlay curve (respects color_map if provided)
+    # --- Manual overlay ONLY if explicitly requested via include_samples ---
     manual_label = "RT_As Received"
-    manual_sizes = np.array(
-        [0.5, 0.7, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26, 38, 53, 75, 106, 150, 212, 300, 425, 600, 1000],
-        dtype=float,
+    should_plot_manual = (
+        include_samples is not None
+        and (manual_label.strip().casefold() in allow_set)
     )
-    manual_percent = np.array(
-        [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
-         55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,
-         94.637, 97.28, 99.165, 99.914, 100],
-        dtype=float,
-    )
-    mo = np.argsort(manual_sizes)
-    manual_sizes = manual_sizes[mo]
-    manual_percent = manual_percent[mo]
-    manual_cum = to_cumulative(manual_percent)
+    if should_plot_manual:
+        manual_sizes = np.array(
+            [0.5, 0.7, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26, 38, 53, 75, 106, 150, 212, 300, 425, 600, 1000],
+            dtype=float,
+        )
+        manual_percent = np.array(
+            [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
+             55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,
+             94.637, 97.28, 99.165, 99.914, 100],
+            dtype=float,
+        )
+        mo = np.argsort(manual_sizes)
+        manual_sizes = manual_sizes[mo]
+        manual_cum = to_cumulative(manual_percent[mo])
 
-    manual_color = (color_map.get(manual_label, "black") if color_map is not None else "black")
-    ax.semilogx(
-        manual_sizes, manual_cum,
-        linewidth=3,
-        color=manual_color,
-        label=manual_label,
-    )
+        manual_color = (color_map.get(manual_label, "black") if color_map is not None else "black")
+        ax.semilogx(
+            manual_sizes, manual_cum,
+            linewidth=3,
+            color=manual_color,
+            label=manual_label,
+        )
 
     # formatting
     ax.set_xlim(*x_limits)

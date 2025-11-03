@@ -11,8 +11,8 @@ def main():
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_Rep_new", "Si_F"]
-    # include_samples = None  # <- to plot all
+    include_samples = ["Si_C", "Si_M"]
+    #include_samples = None  # <- to plot all
 
     # === Global consistent colors ===
     SAMPLE_COLORS = {
@@ -27,7 +27,7 @@ def main():
 
     # === Flags ===
     psd_flag       = 0
-    multi_flag     = 0
+    multi_flag     = 1
     moisture_flag  = 1
     tvml_flag      = 0
     tvspsd_flag    = 1
@@ -58,7 +58,7 @@ def main():
         plot_all_psd(
             data_path,
             sheet_name="PSD_Full",
-            include_samples=["Si_F", "Si_M", "Si_C"],  # or None
+            include_samples=include_samples,  # or None
             color_map=SAMPLE_COLORS,
             show=True
         )

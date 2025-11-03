@@ -1,11 +1,10 @@
 # Data_Process/T_vs_Ml.py
-# Plot F_T (x) vs F_T/F_V (y), color-coded by Sample Code, with same filters as other funcs.
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
+def plot_T_vs_Ml(xlsx_path, sheet_db="DB", include_samples=None, color_map=None):
     """
     x = F_T
     y = F_T / F_V
@@ -14,9 +13,6 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
     """
     # === Load ===
     df = pd.read_excel(xlsx_path, sheet_name=sheet_db, engine="openpyxl")
-
-    # (Optional) very light header cleanup without changing semantics
-    # df.columns = df.columns.str.strip()
 
     # === Required columns present? ===
     required = ["F_T", "F_V", "Sample Code"]
@@ -37,33 +33,44 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
     df = df.dropna(subset=["Sample Code", "F_T", "F_V"])
     df = df[df["F_V"] != 0]
 
+    # === Manual include filter ===
+    if include_samples is not None:
+        df = df[df["Sample Code"].astype(str).isin([str(s) for s in include_samples])]
+
     # === Compute y ===
     df["FT_over_FV"] = df["F_T"] / df["F_V"]
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["FT_over_FV"])
 
-    # === Labels & stable colors ===
+    # === Labels & colors ===
     df["Sample Label"] = df["Sample Code"].astype(str)
     groups = df["Sample Label"]
     uniq = sorted(groups.unique())
-    cmap = plt.cm.get_cmap("tab20", max(1, len(uniq)))
-    color_map = {g: cmap(i % cmap.N) for i, g in enumerate(uniq)}
+
+    if color_map is not None:
+        lookup = {g: color_map.get(g, "#808080") for g in uniq}  # default grey if missing
+    else:
+        cmap = plt.cm.get_cmap("tab20", max(1, len(uniq)))
+        lookup = {g: cmap(i % cmap.N) for i, g in enumerate(uniq)}
 
     # === Plot ===
     plt.figure(figsize=(8.0, 5.8))
     for g in uniq:
         m = (groups == g)
-        plt.scatter(df.loc[m, "F_T"], df.loc[m, "FT_over_FV"],
-                    s=65, alpha=0.9, edgecolor="black", linewidths=0.4,
-                    color=color_map[g], label=g)
+        plt.scatter(
+            df.loc[m, "F_T"], df.loc[m, "FT_over_FV"],
+            s=65, alpha=0.9, edgecolor="black", linewidths=0.4,
+            color=lookup[g], label=g
+        )
 
     # Trendline (overall)
     try:
-        x = df["F_T"].values
-        y = df["FT_over_FV"].values
-        if len(x) >= 2:
-            z = np.polyfit(x, y, 1)
+        x = df["F_T"].astype(float).values
+        y = df["FT_over_FV"].astype(float).values
+        mask = np.isfinite(x) & np.isfinite(y)
+        if mask.sum() >= 2:
+            z = np.polyfit(x[mask], y[mask], 1)
             p = np.poly1d(z)
-            xs = np.linspace(np.nanmin(x), np.nanmax(x), 200)
+            xs = np.linspace(np.nanmin(x[mask]), np.nanmax(x[mask]), 200)
             plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
     except Exception:
         pass
@@ -79,9 +86,10 @@ def plot_T_vs_Ml(xlsx_path, sheet_db="DB"):
 
     return df
 
-def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
+
+def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD", include_samples=None, color_map=None):
     """
-    x = D90 / D10 (EFI)
+    x = D90 / D50 
     y = F_T / F_V
     Filters 'fail'/'anom'. Colors by Sample Code.
     Returns merged DataFrame with 'FT_over_FV' and 'EFI'.
@@ -114,6 +122,10 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     # === Merge ===
     df = pd.merge(df_db, df_psd, on="Sample Code", how="inner")
 
+    # === Manual include filter (post-merge) ===
+    if include_samples is not None:
+        df = df[df["Sample Code"].astype(str).isin([str(s) for s in include_samples])]
+
     # === Keep valid rows ===
     df = df.dropna(subset=["Sample Code", "F_T", "F_V", "D90", "D50"])
     df = df[(df["F_V"] != 0) & (df["D90"] > 0) & (df["D50"] > 0)]
@@ -123,29 +135,36 @@ def plot_TvsPSD(xlsx_path, sheet_db="DB", sheet_psd="PSD"):
     df["EFI"] = df["D90"] / df["D50"]
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["FT_over_FV", "EFI"])
 
-    # === Labels & stable colors ===
+    # === Labels & colors ===
     df["Sample Label"] = df["Sample Code"].astype(str)
     groups = df["Sample Label"]
     uniq = sorted(groups.unique())
-    cmap = plt.cm.get_cmap("tab20", max(1, len(uniq)))
-    color_map = {g: cmap(i % cmap.N) for i, g in enumerate(uniq)}
+
+    if color_map is not None:
+        lookup = {g: color_map.get(g, "#808080") for g in uniq}
+    else:
+        cmap = plt.cm.get_cmap("tab20", max(1, len(uniq)))
+        lookup = {g: cmap(i % cmap.N) for i, g in enumerate(uniq)}
 
     # === Plot ===
     plt.figure(figsize=(8.0, 5.8))
     for g in uniq:
         m = (groups == g)
-        plt.scatter(df.loc[m, "EFI"], df.loc[m, "FT_over_FV"],
-                    s=65, alpha=0.9, edgecolor="black", linewidths=0.4,
-                    color=color_map[g], label=g)
+        plt.scatter(
+            df.loc[m, "EFI"], df.loc[m, "FT_over_FV"],
+            s=65, alpha=0.9, edgecolor="black", linewidths=0.4,
+            color=lookup[g], label=g
+        )
 
     # Trendline (overall)
     try:
-        x = df["EFI"].values
-        y = df["FT_over_FV"].values
-        if len(x) >= 2:
-            z = np.polyfit(x, y, 1)
+        x = df["EFI"].astype(float).values
+        y = df["FT_over_FV"].astype(float).values
+        mask = np.isfinite(x) & np.isfinite(y)
+        if mask.sum() >= 2:
+            z = np.polyfit(x[mask], y[mask], 1)
             p = np.poly1d(z)
-            xs = np.linspace(np.nanmin(x), np.nanmax(x), 200)
+            xs = np.linspace(np.nanmin(x[mask]), np.nanmax(x[mask]), 200)
             plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
     except Exception:
         pass

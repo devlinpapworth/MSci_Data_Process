@@ -125,7 +125,7 @@ def plot_moisture_vs_psd_indices(
         labels_series.values,
         xlab="(D90 - D10) / D50", ylab="Final Moisture (Mc %)",
         title="Final Moisture vs (D90 - D10) / D50",
-        xlim=(0, 5), ylim=(0, 30)
+        xlim=(0, 9), ylim=(0, 30)
     )
 
     # === Plot 3: D10 vs Mc_% ===

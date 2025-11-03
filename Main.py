@@ -11,7 +11,7 @@ def main():
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_C", "Si_M"]
+    include_samples = ["Si_Rep_new", "Si_F"]
     #include_samples = None  # <- to plot all
 
     # === Global consistent colors ===

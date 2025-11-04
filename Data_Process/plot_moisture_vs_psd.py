@@ -59,7 +59,7 @@ def plot_moisture_vs_psd_indices(
     # === Compute indices per-row ===
     df["D90_over_D50"] = df["D90"] / df["D50"]                        # Plot 1 x-axis
     df["FSI"]          = (df["D90"] - df["D10"]) / df["D50"]          # dimensionless span
-
+    df["D50_over_D10"] = df["D50"] / df["D10"]   
     # === Color by exact Sample Code ===
     df["Sample Label"] = df["Sample Code"].astype(str)
     labels_series = df["Sample Label"]
@@ -117,9 +117,9 @@ def plot_moisture_vs_psd_indices(
         xlab="D90 / D50", ylab="Final Moisture (Mc %)",
         title="Final Moisture vs D90/D50",
         xlim=(1, 10), ylim=(0, 30)
-    )
+    ) 
 
-    # === Plot 2: FSI vs Mc_% ===
+    # === Plot 2: (D90 - D10) / D50 vs Mc_% ===
     scatter_grouped(
         df["FSI"].values, df["Mc_%"].values, df["Sample Label"],
         labels_series.values,
@@ -143,7 +143,15 @@ def plot_moisture_vs_psd_indices(
         labels_series.values,
         xlab="D50 (\u03bcm)", ylab="Final Moisture (Mc %)",
         title="Final Moisture vs D50",
-        xlim=(0, 130), ylim=(0, 30)
+        xlim=(0, 130), ylim=(0, 30)        
     )
 
+    # === Plot 5: D50/D10 vs Mc_% ===
+    scatter_grouped(
+        df["D50_over_D10"].values, df["Mc_%"].values, df["Sample Label"],
+        labels_series.values,
+        xlab="D50 / D10", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D50/D10",
+        xlim=(1, 12), ylim=(0, 30)
+    ) 
     return df

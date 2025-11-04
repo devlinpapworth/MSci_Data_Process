@@ -11,9 +11,9 @@ def main():
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_Rep_new", "Si_F"]
+    include_samples = ["Si_F", "Si_Rep_new"]
     #include_samples = None  # <- to plot all
-
+    # "Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM", "RT_As Received"
     # === Global consistent colors ===
     SAMPLE_COLORS = {
         "Si_F":   "#1f77b4",   # blue
@@ -27,12 +27,12 @@ def main():
 
     # === Flags ===
     psd_flag       = 0
-    multi_flag     = 1
+    multi_flag     = 0
     moisture_flag  = 1
     tvml_flag      = 0
-    tvspsd_flag    = 1
+    tvspsd_flag    = 0
     pump_flag      = 0
-    cake_pore_flag = 1
+    cake_pore_flag = 0
 
     # ---- Single PSD curve ----
     if psd_flag:
@@ -109,6 +109,7 @@ def main():
             )
         except Exception as e:
             print("CakePore plot failed:", e)
+
 
 if __name__ == "__main__":
     main()

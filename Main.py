@@ -5,6 +5,7 @@ from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 from Data_Process.T_vs_Ml import plot_T_vs_Ml, plot_TvsPSD
 from Data_Process.Pumping_curve import plot_pumping_curve
 from Data_Process.PSDvsCakePore import plot_PSD_vs_CakePore
+from Data_Interp.Samp_isolation_comp import plot_moisture_category_bars
 
 def main():
     # === Path to your live Excel file ===
@@ -21,14 +22,16 @@ def main():
         "Si_C":   "#2ca02c",   # green
         "Si_Rep": "#d62728",   # red
         "Si_Rep_new": "#9467bd",  # purple
+        "Si_BM": "#808080",
         # add others as needed
     }
     color_map = SAMPLE_COLORS  # <- alias used below
 
     # === Flags ===
+    interp_flag = 1
     psd_flag       = 0
     multi_flag     = 0
-    moisture_flag  = 1
+    moisture_flag  = 0
     tvml_flag      = 0
     tvspsd_flag    = 0
     pump_flag      = 0
@@ -110,6 +113,15 @@ def main():
         except Exception as e:
             print("CakePore plot failed:", e)
 
+    
+    if interp_flag:
+        df_stats = plot_moisture_category_bars(
+            data_path,
+            sheet_db="DB",
+            color_map=SAMPLE_COLORS,           # <- reuse your global colors
+            only_flag_include=False,
+            annotate=True
+    )
 
 if __name__ == "__main__":
     main()

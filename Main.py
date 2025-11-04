@@ -6,6 +6,7 @@ from Data_Process.T_vs_Ml import plot_T_vs_Ml, plot_TvsPSD
 from Data_Process.Pumping_curve import plot_pumping_curve
 from Data_Process.PSDvsCakePore import plot_PSD_vs_CakePore
 from Data_Interp.Samp_isolation_comp import plot_moisture_category_bars
+from Data_Interp.Cake_Filtration import plot_cake_filtration_efficiency
 
 def main():
     # === Path to your live Excel file ===
@@ -28,7 +29,8 @@ def main():
     color_map = SAMPLE_COLORS  # <- alias used below
 
     # === Flags ===
-    interp_flag = 1
+    Cakfilt_flag   = 1
+    interp_flag    = 0
     psd_flag       = 0
     multi_flag     = 0
     moisture_flag  = 0
@@ -122,6 +124,17 @@ def main():
             only_flag_include=False,
             annotate=True
     )
+
+    if Cakfilt_flag:
+        res = plot_cake_filtration_efficiency(
+            data_path,
+            sheet_filter="FILTER",
+            sheet_db="DB",
+            color_map=None,  # pass your existing dict from main
+            out_dir="00_Figures",
+            annotate=True,
+        )
+
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,7 @@ from Data_Process.Pumping_curve import plot_pumping_curve
 from Data_Process.PSDvsCakePore import plot_PSD_vs_CakePore
 from Data_Interp.joint_MC import plot_moisture_violins_by_code
 from Data_Interp.Cake_Filtration import plot_cake_filtration_efficiency
+from Data_Interp.joint_Cake_pore import plot_pore_violins_by_code
 
 def main():
     # === Path to your live Excel file ===
@@ -118,6 +119,14 @@ def main():
     
     if joint_MC:
         df_stats = plot_moisture_violins_by_code(
+            data_path,
+            sheet_db="DB",
+            color_map=SAMPLE_COLORS,  # reuse your global colors
+            annotate=True,            # show n above each violin
+            sort_codes="alpha",       # order samples alphabetically ('n', 'mean', or 'median' also work)
+            show_points=True          # overlay individual data points
+        )
+        df_stats = plot_pore_violins_by_code(
             data_path,
             sheet_db="DB",
             color_map=SAMPLE_COLORS,  # reuse your global colors

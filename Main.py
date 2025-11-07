@@ -5,7 +5,7 @@ from Data_Process.plot_moisture_vs_psd import plot_moisture_vs_psd_indices
 from Data_Process.T_vs_Ml import plot_T_vs_Ml, plot_TvsPSD
 from Data_Process.Pumping_curve import plot_pumping_curve
 from Data_Process.PSDvsCakePore import plot_PSD_vs_CakePore
-from Data_Interp.Samp_isolation_comp import plot_moisture_category_bars
+from Data_Interp.joint_MC import plot_moisture_violins_by_code
 from Data_Interp.Cake_Filtration import plot_cake_filtration_efficiency
 
 def main():
@@ -13,7 +13,7 @@ def main():
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_F", "Si_Rep_new"]
+    include_samples = ["Si_M", "Si_Rep", "Si_Rep_new"]
     #include_samples = None  # <- to plot all
     # "Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM", "RT_As Received"
     # === Global consistent colors ===
@@ -29,8 +29,8 @@ def main():
     color_map = SAMPLE_COLORS  # <- alias used below
 
     # === Flags ===
-    Cakfilt_flag   = 1
-    interp_flag    = 0
+    Cakfilt_flag   = 0
+    joint_MC    = 1
     psd_flag       = 0
     multi_flag     = 0
     moisture_flag  = 0
@@ -116,14 +116,15 @@ def main():
             print("CakePore plot failed:", e)
 
     
-    if interp_flag:
-        df_stats = plot_moisture_category_bars(
+    if joint_MC:
+        df_stats = plot_moisture_violins_by_code(
             data_path,
             sheet_db="DB",
-            color_map=SAMPLE_COLORS,           # <- reuse your global colors
-            only_flag_include=False,
-            annotate=True
-    )
+            color_map=SAMPLE_COLORS,  # reuse your global colors
+            annotate=True,            # show n above each violin
+            sort_codes="alpha",       # order samples alphabetically ('n', 'mean', or 'median' also work)
+            show_points=True          # overlay individual data points
+        )
 
     if Cakfilt_flag:
         res = plot_cake_filtration_efficiency(

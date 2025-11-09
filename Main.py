@@ -9,13 +9,16 @@ from Data_Interp.joint_MC import plot_moisture_violins_by_code
 from Data_Interp.Cake_Filtration import plot_cake_filtration_efficiency
 from Data_Interp.joint_Cake_pore import plot_pore_violins_by_code
 from Data_Interp.joint_t_v import plot_FT_over_FV_violins_by_code
+from Data_Process.A_PvsSample import plot_airp_vs_psd
+from Darcy.All import plot_hydraulic_vs_D10
+
 
 def main():
     # === Path to your live Excel file ===
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_M", "Si_Rep", "Si_Rep_new"]
+    include_samples = ["Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM"]
     #include_samples = None  # <- to plot all
     # "Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM", "RT_As Received"
     # === Global consistent colors ===
@@ -31,8 +34,10 @@ def main():
     color_map = SAMPLE_COLORS  # <- alias used below
 
     # === Flags ===
+    Darcy          = 1
+    Air_press      = 0
     Cakfilt_flag   = 0
-    joint_MC    = 1
+    joint_MC       = 0
     psd_flag       = 0
     multi_flag     = 0
     moisture_flag  = 0
@@ -151,6 +156,25 @@ def main():
             annotate=True,
         )
 
+    if Air_press:
+        df_air = plot_airp_vs_psd(
+            data_path,
+            sheet_db="DB",
+            sheet_psd="PSD",
+            include_samples=None,        # or ["Si_M", "Si_Rep", ...]
+            color_map=SAMPLE_COLORS      # use your global consistent color map
+        )
+
+    if Darcy:
+        df_out = plot_hydraulic_vs_D10(
+             data_path,
+             sheet_db="DB",
+             sheet_psd="PSD",
+             include_samples=None,           # or ["Si_F","Si_BM"]
+             color_map=color_map,
+             use_pressure_col="F_P",         # fill pressure for Darcy calc
+             only_flag_include=True,
+         )
 
 if __name__ == "__main__":
     main()

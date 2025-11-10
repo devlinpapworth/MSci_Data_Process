@@ -145,5 +145,16 @@ def plot_PSD_vs_CakePore(
         xlim_override=(1, 12)
     )
 
+    # === D90/D50 vs Cake Porosity — use x: 1–12 like your moisture plots ===
+    df["D90_over_D50"] = pd.to_numeric(df[d90col], errors="coerce") / pd.to_numeric(df[d50_col], errors="coerce")
+    scatter_grouped(
+        df["D90_over_D50"].values,
+        df["Cake_por"].values,
+        df["Sample Label"],
+        xlab=f"{d90col}/{d50_col}",
+        ylab="Cake Porosity",
+        title=f"Cake Porosity vs {d90col}/{d50_col}",
+        xlim_override=(1, 12)
+    )
 
     return df

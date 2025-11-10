@@ -46,7 +46,7 @@ def plot_moisture_vs_psd_indices(
         df_db = df_db[df_db["Sample Code"].astype(str).isin(allow)]
 
     # === Prepare PSD table ===
-    for col in ["D10", "D50", "D90"]:
+    for col in ["D10", "D50", "D90", "D80", "D20"]:
         df_psd[col] = pd.to_numeric(df_psd.get(col), errors="coerce")
 
     # === Merge DB rows with PSD by Sample Code (no aggregation) ===
@@ -60,6 +60,7 @@ def plot_moisture_vs_psd_indices(
     df["D90_over_D50"] = df["D90"] / df["D50"]                        # Plot 1 x-axis
     df["FSI"]          = (df["D90"] - df["D10"]) / df["D50"]          # dimensionless span
     df["D50_over_D10"] = df["D50"] / df["D10"]   
+    df["D80_over_D20"] = df["D80"] / df["D20"] 
     # === Color by exact Sample Code ===
     df["Sample Label"] = df["Sample Code"].astype(str)
     labels_series = df["Sample Label"]
@@ -154,4 +155,13 @@ def plot_moisture_vs_psd_indices(
         title="Final Moisture vs D50/D10",
         xlim=(1, 12), ylim=(0, 30)
     ) 
+
+    scatter_grouped(
+        df["D80_over_D20"].values, df["Mc_%"].values, df["Sample Label"],
+        labels_series.values,
+        xlab="D80 / D20", ylab="Final Moisture (Mc %)",
+        title="Final Moisture vs D80/D20",
+        xlim=(1, 12), ylim=(0, 30)
+    ) 
+
     return df

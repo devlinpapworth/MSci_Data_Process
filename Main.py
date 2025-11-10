@@ -34,17 +34,17 @@ def main():
     color_map = SAMPLE_COLORS  # <- alias used below
 
     # === Flags ===
-    Darcy          = 1
+    Darcy          = 0
     Air_press      = 0
     Cakfilt_flag   = 0
     joint_MC       = 0
     psd_flag       = 0
     multi_flag     = 0
-    moisture_flag  = 0
-    tvml_flag      = 0
+    moisture_flag  = 1
+    tvml_flag      = 1
     tvspsd_flag    = 0
     pump_flag      = 0
-    cake_pore_flag = 0
+    cake_pore_flag = 1
 
     # ---- Single PSD curve ----
     if psd_flag:

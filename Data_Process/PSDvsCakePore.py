@@ -7,6 +7,10 @@ def plot_PSD_vs_CakePore(
     sheet_db="DB",
     sheet_psd="PSD",
     d50_col="D50",
+    d20col = "D20",
+    d80col = "D80",
+    d10col = "D10",
+    d90col = "D90",
     include_samples=None,
     color_map=None,  # pass a dict like {"Si_F":"#1f77b4", ...}
 ):
@@ -23,7 +27,7 @@ def plot_PSD_vs_CakePore(
     for col in ["Sample Code", "Cake_por"]:
         if col not in df_db.columns:
             raise ValueError(f"'{col}' missing from sheet '{sheet_db}'.")
-    for col in ["Sample Code", d50_col]:
+    for col in ["Sample Code", d50_col, d10col, d20col, d80col, d90col]:
         if col not in df_psd.columns:
             raise ValueError(f"'{col}' missing from sheet '{sheet_psd}'.")
 
@@ -39,9 +43,11 @@ def plot_PSD_vs_CakePore(
     df_psd = df_psd.dropna(subset=["Sample Code", d50_col])
 
     # === Merge DB + PSD on Sample Code ===
-    df = pd.merge(df_db[["Sample Code", "Cake_por"]],
-                  df_psd[["Sample Code", d50_col]],
-                  on="Sample Code", how="inner")
+    df = pd.merge(
+        df_db[["Sample Code", "Cake_por"]],
+        df_psd[["Sample Code", d50_col, d10col, d20col, d80col, d90col]],
+        on="Sample Code", how="inner"
+    )
 
     # === Manual include filter (optional) ===
     if include_samples is not None:
@@ -50,8 +56,9 @@ def plot_PSD_vs_CakePore(
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Cake_por", d50_col])
     df["Sample Label"] = df["Sample Code"].astype(str)
 
-    # === Plot helper with FIXED AXES ===
-    def scatter_grouped(x, y, groups, xlab, ylab, title, legend_title="Sample Code"):
+        # === Plot helper with FIXED AXES ===
+    def scatter_grouped(x, y, groups, xlab, ylab, title, legend_title="Sample Code",
+                        xlim_override=None):
         plt.figure(figsize=(8.0, 5.8))
         uniq = sorted(pd.Series(groups).unique())
 
@@ -78,13 +85,20 @@ def plot_PSD_vs_CakePore(
             if mask.sum() >= 2:
                 z = np.polyfit(x_arr[mask], y_arr[mask], 1)
                 p = np.poly1d(z)
-                xs = np.linspace(0, 130, 200)  # match fixed x-axis
+                # x-range for trend: use same as axes
+                if xlim_override is None:
+                    xs = np.linspace(0, 130, 200)
+                else:
+                    xs = np.linspace(xlim_override[0], xlim_override[1], 200)
                 plt.plot(xs, p(xs), linestyle="--", color="black", label="Trend")
         except Exception:
             pass
 
         # >>> FIXED AXES <<<
-        plt.xlim(0, 130)
+        if xlim_override is None:
+            plt.xlim(0, 130)       # default for size axes
+        else:
+            plt.xlim(*xlim_override)
         plt.ylim(0.3, 0.5)
 
         plt.title(title)
@@ -96,7 +110,7 @@ def plot_PSD_vs_CakePore(
         plt.tight_layout()
         plt.show()
 
-    # === Plot Cake Porosity vs D50 ===
+    # === Plot Cake Porosity vs D50 (unchanged axes 0–130) ===
     scatter_grouped(
         df[d50_col].values,
         df["Cake_por"].values,
@@ -105,5 +119,31 @@ def plot_PSD_vs_CakePore(
         ylab="Cake Porosity",
         title=f"Cake Porosity vs {d50_col}"
     )
+
+    
+    # === D80/D20 vs Cake Porosity — use x: 1–12 like your moisture plots ===
+    df["D80_over_D20"] = pd.to_numeric(df[d80col], errors="coerce") / pd.to_numeric(df[d20col], errors="coerce")
+    scatter_grouped(
+        df["D80_over_D20"].values,
+        df["Cake_por"].values,
+        df["Sample Label"],
+        xlab=f"{d80col}/{d20col}",
+        ylab="Cake Porosity",
+        title=f"Cake Porosity vs {d80col}/{d20col}",
+        xlim_override=(1, 12)
+    )
+
+    # === D50/D10 vs Cake Porosity — use x: 1–12 like your moisture plots ===
+    df["D50_over_D10"] = pd.to_numeric(df[d50_col], errors="coerce") / pd.to_numeric(df[d10col], errors="coerce")
+    scatter_grouped(
+        df["D50_over_D10"].values,
+        df["Cake_por"].values,
+        df["Sample Label"],
+        xlab=f"{d50_col}/{d10col}",
+        ylab="Cake Porosity",
+        title=f"Cake Porosity vs {d50_col}/{d10col}",
+        xlim_override=(1, 12)
+    )
+
 
     return df

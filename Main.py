@@ -18,7 +18,7 @@ def main():
     data_path = r"C:\Users\devli\OneDrive - Imperial College London\MSci - Devlin (Personal)\Data\FP_db_all.xlsx"
 
     # === Define which samples to include globally ===
-    include_samples = ["Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM"]
+    include_samples = ["Si_Val_01", "Si_Val_02","Si_Val_03", "Si_Val_04", "Si_Val_05","Si_Val_06"]
     #include_samples = None  # <- to plot all
     # "Si_C", "Si_M", "Si_F", "Si_Rep", "Si_Rep_new", "Si_BM", "RT_As Received"
     # === Global consistent colors ===
@@ -29,6 +29,15 @@ def main():
         "Si_Rep": "#d62728",   # red
         "Si_Rep_new": "#9467bd",  # purple
         "Si_BM": "#808080",
+        "Si_val_01": "#1f77b4",  # blue
+        "Si_val_02": "#ff7f0e",  # orange
+        "Si_val_03": "#2ca02c",  # green
+        "Si_val_04": "#d62728",  # red
+        "Si_val_05": "#9467bd",  # purple
+        "Si_val_06": "#8c564b",  # brown
+        "Si_val_07": "#e377c2",  # pink
+        "Si_val_08": "#7f7f7f",  # gray
+        "Si_val_09": "#17becf",  # cyan
         # add others as needed
     }
     color_map = SAMPLE_COLORS  # <- alias used below
@@ -39,12 +48,12 @@ def main():
     Cakfilt_flag   = 0
     joint_MC       = 0
     psd_flag       = 0
-    multi_flag     = 0
-    moisture_flag  = 1
-    tvml_flag      = 1
+    multi_flag     = 1
+    moisture_flag  = 0
+    tvml_flag      = 0
     tvspsd_flag    = 0
     pump_flag      = 0
-    cake_pore_flag = 1
+    cake_pore_flag = 0
 
     # ---- Single PSD curve ----
     if psd_flag:

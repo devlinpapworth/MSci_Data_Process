@@ -99,7 +99,7 @@ def plot_PSD_vs_CakePore(
             plt.xlim(0, 130)       # default for size axes
         else:
             plt.xlim(*xlim_override)
-        plt.ylim(0.3, 0.5)
+        plt.ylim(0, 0.5)
 
         plt.title(title)
         plt.xlabel(xlab)

@@ -9,7 +9,6 @@ from matplotlib.ticker import ScalarFormatter
 
 # ---------------------------------------------------------------------
 # Public convenience: consistent default colors for sample codes/names
-# Extend/override in your main() as needed.
 # ---------------------------------------------------------------------
 DEFAULT_SAMPLE_COLORS: Dict[str, str] = {
     "Si_F": "#1f77b4",       # blue
@@ -17,7 +16,11 @@ DEFAULT_SAMPLE_COLORS: Dict[str, str] = {
     "Si_C": "#2ca02c",       # green
     "Si_Rep": "#d62728",     # red
     "Si_Rep_new": "#9467bd", # purple
-    "RT_As Received": "#000000",  # manual overlay (black by default)
+    "RT_As Received": "#000000",
+    "Si_val_01": "#1f77b4",
+    "Si_val_02": "#ff7f0e",
+    "Si_val_03": "#2ca02c",
+    # add others as needed
 }
 
 # ---------------------------------------------------------------------
@@ -29,8 +32,7 @@ def d_at_percent(
     p: float
 ) -> float:
     """
-    Return the particle size (Um) at cumulative percent passing p.
-    sizes_um must be strictly increasing; percent_passing must be non-decreasing.
+    (Kept for reference; not used by the 'no interpolation' logic below.)
     """
     x = np.asarray(sizes_um, dtype=float)
     y = np.asarray(percent_passing, dtype=float)
@@ -51,15 +53,12 @@ def plot_psd(
     x_major_ticks: Iterable[float] = (0.1, 1, 10, 100, 1000),
     x_limits: Optional[Tuple[float, float]] = (0.1, 1000),
     show_grid: bool = True,
-    annotate_dx: Iterable[int] | None = None,  # keep None to avoid drawing labels
+    annotate_dx: Iterable[int] | None = None,
     save_path: Optional[str] = None,
     show: bool = True,
-    label: Optional[str] = None,               # NEW: used for legend + color lookup
-    color_map: Optional[Dict[str, str]] = None # NEW: consistent color control
+    label: Optional[str] = None,
+    color_map: Optional[Dict[str, str]] = None
 ) -> Dict[str, float]:
-    """
-    ovided).
-    """
     x = np.asarray(sizes_um, dtype=float)
     y = np.asarray(percent_passing, dtype=float)
     if np.any(np.diff(x) <= 0):
@@ -71,7 +70,7 @@ def plot_psd(
     if color_map is not None and label is not None:
         curve_color = color_map.get(label, "#808080")
     else:
-        curve_color = "#1f77b4"  # default matplotlib blue
+        curve_color = "#1f77b4"
 
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.semilogx(x, y, "-o", linewidth=2, markersize=4, color=curve_color, label=label)
@@ -89,7 +88,6 @@ def plot_psd(
         ax.grid(True, which="major", alpha=0.4)
         ax.grid(True, which="minor", alpha=0.2)
 
-    # compute (but do not draw) D-values
     dx_out: Dict[str, float] = {}
     if annotate_dx:
         for p in annotate_dx:
@@ -109,12 +107,9 @@ def plot_psd(
     return dx_out
 
 # ---------------------------------------------------------------------
-# All-samples (PSD_Full)
+# Helpers for extracting sizes and Dx without interpolation
 # ---------------------------------------------------------------------
 def _extract_numeric_size(colname: str) -> Optional[float]:
-    """
-    .
-    """
     for token in str(colname).split():
         try:
             return float(token)
@@ -122,7 +117,44 @@ def _extract_numeric_size(colname: str) -> Optional[float]:
             continue
     return None
 
+def _first_size_at_or_above_percent(
+    sizes: np.ndarray, cum: np.ndarray, target_percent: float
+) -> float:
+    """
+    'No interpolation' rule: return the first size where cumulative >= target_percent.
+    If never reached, return NaN.
+    """
+    idx = np.where(cum >= target_percent)[0]
+    return float(sizes[idx[0]]) if idx.size else float("nan")
 
+def _find_dx_column(df_row: pd.Series, targets=(10,20,80)) -> Dict[int, Optional[float]]:
+    """
+    Try to read Dx columns directly (e.g., 'Dx (20)', 'D10', 'Dx(80)').
+    Returns dict {percentile: value or None}.
+    """
+    lookup = {p: None for p in targets}
+    # Build a case-folded column index for robust matching
+    cols = {c.casefold(): c for c in df_row.index.astype(str)}
+    for p in targets:
+        # possible names
+        candidates = [
+            f"dx ({p})", f"dx({p})", f"d{x}" if (x:=p) else "", f"d{p}",
+            f"dx {p}", f"dx_{p}"
+        ]
+        for cand in candidates:
+            key = cand.casefold()
+            if key in cols:
+                try:
+                    val = float(df_row[cols[key]])
+                    lookup[p] = val
+                    break
+                except Exception:
+                    pass
+    return lookup
+
+# ---------------------------------------------------------------------
+# All-samples (PSD_Full) with printed D10/D20/D80 + ratio (no interpolation)
+# ---------------------------------------------------------------------
 def plot_all_psd(
     excel_path: str,
     sheet_name: str = "PSD_Full",
@@ -134,10 +166,12 @@ def plot_all_psd(
     save_path: Optional[str] = None,
     show: bool = True,
     legend: bool = True,
-    include_samples: Optional[Iterable[Any]] = None,   # filter which rows to draw
-    color_map: Optional[Dict[str, str]] = None,        # consistent per-sample colors
-    id_col_override: Optional[str] = None              # force ID column if needed
-) -> None:
+    include_samples: Optional[Iterable[Any]] = None,
+    color_map: Optional[Dict[str, str]] = None,
+    id_col_override: Optional[str] = None,
+    print_dx: bool = True  # << NEW: print a table of D10/D20/D80/D80/20
+) -> Optional[pandas.DataFrame]:
+
     def to_cumulative(y_raw: np.ndarray) -> np.ndarray:
         y = np.nan_to_num(y_raw.astype(float), nan=0.0)
         if np.all(np.diff(y) >= -1e-6) and np.nanmax(y) <= 100 + 1e-6:
@@ -157,7 +191,6 @@ def plot_all_psd(
     if id_col is None:
         raise ValueError("Neither 'Sample Code' nor 'Sample Name' found in the sheet.")
 
-    # Normalize the ID column for robust matching
     df[id_col] = df[id_col].astype(str).str.strip()
 
     # --- Extract PSD size columns ---
@@ -175,7 +208,7 @@ def plot_all_psd(
     sizes_um = np.asarray(sizes_um, dtype=float)[order]
     psd_cols = [psd_cols[i] for i in order]
 
-    # --- Build normalized include set and filter rows ---
+    # --- Filter rows if requested ---
     allow_set = None
     if include_samples is not None:
         allow_set = {str(s).strip().casefold() for s in include_samples}
@@ -195,6 +228,9 @@ def plot_all_psd(
         cidx += 1
         return color
 
+    # collect Dx results
+    rows_out: List[Dict[str, Any]] = []
+
     # plot each PSD curve
     for _, row in df.iterrows():
         label = str(row[id_col]).strip()
@@ -202,36 +238,28 @@ def plot_all_psd(
         if np.isnan(y_vals).all():
             continue
         y_cum = to_cumulative(y_vals)
+
+        # Plot curve
         ax.semilogx(sizes_um, y_cum, linewidth=2, label=label, color=resolve_color(label))
 
-    # --- Manual overlay ONLY if explicitly requested via include_samples ---
-    manual_label = "RT_As Received"
-    should_plot_manual = (
-        include_samples is not None
-        and (manual_label.strip().casefold() in allow_set)
-    )
-    if should_plot_manual:
-        manual_sizes = np.array(
-            [0.5, 0.7, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26, 38, 53, 75, 106, 150, 212, 300, 425, 600, 1000],
-            dtype=float,
-        )
-        manual_percent = np.array(
-            [2.826, 4.277, 7.206, 12.586, 17.421, 25.123, 31.079, 40.088, 46.615,
-             55.289, 62.971, 69.272, 75.268, 80.019, 84.453, 88.355, 91.703,
-             94.637, 97.28, 99.165, 99.914, 100],
-            dtype=float,
-        )
-        mo = np.argsort(manual_sizes)
-        manual_sizes = manual_sizes[mo]
-        manual_cum = to_cumulative(manual_percent[mo])
+        # --- NO-INTERPOLATION Dx extraction ---
+        # 1) Prefer explicit Dx columns if present
+        dx_cols = _find_dx_column(row, targets=(10, 20, 80))
 
-        manual_color = (color_map.get(manual_label, "black") if color_map is not None else "black")
-        ax.semilogx(
-            manual_sizes, manual_cum,
-            linewidth=3,
-            color=manual_color,
-            label=manual_label,
-        )
+        # 2) Fallback to first bin meeting the target (>=) from cumulative curve
+        d10 = dx_cols[10] if dx_cols[10] is not None else _first_size_at_or_above_percent(sizes_um, y_cum, 10.0)
+        d20 = dx_cols[20] if dx_cols[20] is not None else _first_size_at_or_above_percent(sizes_um, y_cum, 20.0)
+        d80 = dx_cols[80] if dx_cols[80] is not None else _first_size_at_or_above_percent(sizes_um, y_cum, 80.0)
+
+        span = (d80 / d20) if (np.isfinite(d80) and np.isfinite(d20) and d20 > 0) else np.nan
+
+        rows_out.append({
+            id_col: label,
+            "D10 (um)": d10,
+            "D20 (um)": d20,
+            "D80 (um)": d80,
+            "D80/D20": span,
+        })
 
     # formatting
     ax.set_xlim(*x_limits)
@@ -243,7 +271,7 @@ def plot_all_psd(
     ax.get_xaxis().set_major_formatter(ScalarFormatter())
     if show_grid:
         ax.grid(True, which="major", alpha=0.4)
-        ax.grid(True, which="minor", alpha=0.2)
+    ax.grid(True, which="minor", alpha=0.2)
     if legend:
         ax.legend(title=id_col, fontsize=9, ncol=1)
 
@@ -254,3 +282,14 @@ def plot_all_psd(
         plt.show()
     else:
         plt.close(fig)
+
+    # --- Print Dx table (no interpolation) ---
+    if print_dx and rows_out:
+        out_df = pd.DataFrame(rows_out)
+        # order columns nicely
+        out_df = out_df[[id_col, "D10 (um)", "D20 (um)", "D80 (um)", "D80/D20"]]
+        # round for display
+        print(out_df.round({"D10 (um)": 2, "D20 (um)": 2, "D80 (um)": 2, "D80/D20": 2}).to_string(index=False))
+        return out_df
+
+    return None
